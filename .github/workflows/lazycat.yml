@@ -1,8 +1,12 @@
 name: Publish LazyCat LPK
 
 on:
-  schedule:
-    - cron: "17 3 * * *"
+  push:
+    branches:
+      - main
+    paths:
+      - package.yml
+      - lzc-manifest.yml
   workflow_dispatch:
 
 permissions:

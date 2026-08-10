@@ -1,0 +1,109 @@
+name: Sync LAN Clipboard upstream
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Synchronize even when the current package version is newer.
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lan-clip-upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout application
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve latest upstream release
+        id: upstream
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const {data: release} = await github.rest.repos.getLatestRelease({
+              owner: "cornradio",
+              repo: "Lan-clip",
+            });
+            const match = release.tag_name.trim().match(/^v?(\d+)\.(\d+)(?:\.(\d+))?$/);
+            if (!match) {
+              core.setFailed(`Unsupported upstream release tag: ${release.tag_name}`);
+              return;
+            }
+            const version = `${match[1]}.${match[2]}.${match[3] || "0"}`;
+            core.setOutput("version", version);
+            core.setOutput("tag", release.tag_name);
+
+      - name: Decide whether synchronization is needed
+        id: decision
+        shell: bash
+        env:
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force || false }}
+          UPSTREAM_VERSION: ${{ steps.upstream.outputs.version }}
+        run: |
+          set -euo pipefail
+          current="$(sed -nE 's/^version:[[:space:]]*([^[:space:]]+).*/\1/p' package.yml)"
+          if [[ ! "${current}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid current package version: ${current}" >&2
+            exit 1
+          fi
+          if [[ "${FORCE}" == "true" ]]; then
+            echo "sync=true" >>"${GITHUB_OUTPUT}"
+          elif [[ "$(printf '%s\n%s\n' "${current}" "${UPSTREAM_VERSION}" | sort -V | tail -n 1)" == "${UPSTREAM_VERSION}" && "${current}" != "${UPSTREAM_VERSION}" ]]; then
+            echo "sync=true" >>"${GITHUB_OUTPUT}"
+          else
+            echo "sync=false" >>"${GITHUB_OUTPUT}"
+          fi
+          echo "current=${current}" >>"${GITHUB_OUTPUT}"
+
+      - name: Synchronize latest image digest
+        if: steps.decision.outputs.sync == 'true'
+        uses: ca-x/lazycat-github-action@v1
+        env:
+          LZC_API_HOST: ${{ secrets.LZC_API_HOST }}
+          LZC_API_TOKEN: ${{ secrets.LZC_API_TOKEN }}
+        with:
+          operation: check
+          config: .github/lan-clip-image-sync.yml
+
+      - name: Apply upstream release version
+        if: steps.decision.outputs.sync == 'true'
+        shell: bash
+        env:
+          UPSTREAM_VERSION: ${{ steps.upstream.outputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ "$(grep -Ec '^version:[[:space:]]*' package.yml)" != "1" ]]; then
+            echo "package.yml must contain exactly one top-level version" >&2
+            exit 1
+          fi
+          sed -i -E "s/^version:[[:space:]]*.*/version: ${UPSTREAM_VERSION}/" package.yml
+          grep -Fx "version: ${UPSTREAM_VERSION}" package.yml
+
+      - name: Commit synchronized release
+        if: steps.decision.outputs.sync == 'true'
+        shell: bash
+        env:
+          UPSTREAM_TAG: ${{ steps.upstream.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- package.yml lzc-manifest.yml
+          if git diff --cached --quiet; then
+            echo "Upstream release and image digest are already synchronized."
+            exit 0
+          fi
+          git commit -m "chore: sync LAN Clipboard ${UPSTREAM_TAG}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

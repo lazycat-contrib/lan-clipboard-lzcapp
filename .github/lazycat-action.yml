@@ -9,26 +9,12 @@ project:
 
 update:
   strategy: publish
-  allow_downgrade: false
+  allow_downgrade: true
   version_source:
-    type: image
-    image: lan-clipboard
+    type: git
 
 build:
   run_buildscript: false
-
-images:
-  - id: lan-clipboard
-    target: service
-    service: lan-clipboard
-    source: docker.1ms.run/kasusa/lan-clipboard-app
-    channel: custom
-    sort: semver
-    tag_regex: '^\d{8}$'
-    version_regex: '^(?P<version>\d{8})$'
-    version_template: '{version}.0.0'
-    delivery:
-      mode: lazycat
 
 stores:
   official:
