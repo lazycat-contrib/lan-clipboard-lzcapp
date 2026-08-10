@@ -22,7 +22,7 @@ images:
   - id: lan-clip
     target: service
     service: lan-clipboard
-    source: docker.io/kasusa/lan-clip
+    source: docker.1ms.run/kasusa/lan-clip
     channel: custom
     sort: created
     tag_regex: '^latest$'
