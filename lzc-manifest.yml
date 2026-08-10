@@ -1,0 +1,12 @@
+application:
+  subdomain: lan-clipboard
+  background_task: true
+  public_path:
+    - /
+  upstreams:
+    - location: /
+      backend: http://lan-clipboard:5000/
+services:
+  lan-clipboard:
+    # kasusa/lan-clipboard-app:20251103
+    image: registry.lazycat.cloud/czyt/kasusa/lan-clipboard-app:7141c53806b5fb46
