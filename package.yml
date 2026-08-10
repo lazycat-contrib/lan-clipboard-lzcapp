@@ -1,5 +1,5 @@
 package: community.lazycat.app.lan-clipboard
-version: 20251229.0.0
+version: 1.7.1
 name: LAN Clipboard
 description: 网络剪贴板，轻松粘贴并临时保存文本、文件和图片。
 min_os_version: 1.5.0
