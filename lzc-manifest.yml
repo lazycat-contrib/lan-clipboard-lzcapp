@@ -9,4 +9,5 @@ application:
 services:
   lan-clipboard:
     # kasusa/lan-clipboard-app:20251103
-    image: registry.lazycat.cloud/czyt/kasusa/lan-clipboard-app:7141c53806b5fb46
+    # upstream: docker.1ms.run/kasusa/lan-clipboard-app:20251229
+    image: registry.lazycat.cloud/czyt/kasusa/lan-clipboard-app:08f6258d3d43e5ad
