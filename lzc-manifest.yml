@@ -10,4 +10,4 @@ services:
   lan-clipboard:
     # kasusa/lan-clipboard-app:20251103
     # upstream: docker.io/kasusa/lan-clip:latest@sha256:8ba374ad6370f36cd66ca95cf9a456c29a0184730dea84b657a442c654f3848d
-    image: registry.lazycat.cloud/czyt/kasusa/lan-clip:63d6c9ecf6559f70
+    image: docker.1ms.run/kasusa/lan-clip:latest@sha256:8ba374ad6370f36cd66ca95cf9a456c29a0184730dea84b657a442c654f3848d

@@ -27,7 +27,8 @@ images:
     sort: created
     tag_regex: '^latest$'
     delivery:
-      mode: lazycat
+      mode: mirror
+      require_digest_match: true
 
 stores:
   official:

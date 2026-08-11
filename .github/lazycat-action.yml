@@ -18,8 +18,8 @@ build:
 
 stores:
   official:
-    enabled: true
-    skip_if_version_exists: true
+    enabled: false
+    skip_if_version_exists: false
     retry:
       enabled: false
   private:
